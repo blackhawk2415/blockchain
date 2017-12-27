@@ -8,18 +8,29 @@ class Block {
 		this.data = data;
 		this.previousHash = previousHash;
 		this.hash = this.calculateHash();
+		this.nonce = 0; // has nothing to do with block, but can be changed without losing integrity of block
 	}
 
 	calculateHash() {
 		//begin hash function, using sha 256
-		return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data)).toString();
+		return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
 		// JSON.stringify takes js object converts to JSON and saves as text
+	}
+
+	mineBlock(difficulty) { // creates level of difficulty to create new block -- make block begin with certain amount of zeros
+		while(this.hash.substring(0, difficulty) !== Array(difficulty + 1).join("0")) {
+			this.nonce++; //without this, this is an endless loop. 
+			this.hash = this.calculateHash();
+		}
+
+		console.log("block mined: " + this.hash);
 	}
 }
 
 class Blockchain {
 	constructor(){
 		this.chain = [this.createGenesisBlock()];
+		this.difficulty = 4;
 	}
 
 	createGenesisBlock(){
@@ -32,7 +43,8 @@ class Blockchain {
 
 	addBlock(newBlock) {
 		newBlock.previousHash = this.getLatestBlock().hash;
-		newBlock.hash = newBlock.calculateHash();
+		newBlock.mineBlock(this.difficulty);
+		//newBlock.hash = newBlock.calculateHash();
 		this.chain.push(newBlock);
 	}
 
@@ -54,16 +66,21 @@ class Blockchain {
 
 
 let winterCoin = new Blockchain();
+
+console.log('Mining block 1...');
 winterCoin.addBlock(new Block(1,"12/11/2017", {amount: 4}));
+console.log('Mining block 2...');
 winterCoin.addBlock(new Block(2,"12/13/2017", {amount: 9}));
 
-console.log('Is block chain valid ' + winterCoin.isChainValid())
+// console.log('Is block chain valid ' + winterCoin.isChainValid())
 
-//break chain
-winterCoin.chain[1].data = {amount: 100};
-winterCoin.chain[1].hash = winterCoin.chain[1].calculateHash();
+// //break chain
+// winterCoin.chain[1].data = {amount: 100};
+// winterCoin.chain[1].hash = winterCoin.chain[1].calculateHash();
 
-console.log('Is block chain valid ' + winterCoin.isChainValid())
+// console.log('Is block chain valid ' + winterCoin.isChainValid())
 // console.log(JSON.stringify(winterCoin, null, 4))
 
 //https://www.youtube.com/watch?v=HneatE69814
+
+// proof of work prevents spamming and security flaws. This mechanism equates to using a lot of computing power to create a block aka mining
